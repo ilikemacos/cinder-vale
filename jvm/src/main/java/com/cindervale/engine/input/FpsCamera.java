@@ -38,6 +38,7 @@ public final class FpsCamera extends BaseAppState {
 
     private CollisionWorld collision;
     private java.util.function.BiFunction<Float, Float, Float> groundHeight;
+    private boolean needsGroundSnap = false;
     private float velocityY = 0f;
     private boolean onGround = true;
 
@@ -110,6 +111,12 @@ public final class FpsCamera extends BaseAppState {
     /** Called from Engine each frame; skipped while paused. */
     public void tick(float dt) {
         if (!enabledInput) return;
+        // Deferred ground snap — cam is only ready after initialize() ran.
+        if (needsGroundSnap && cam != null && groundHeight != null) {
+            Vector3f p = cam.getLocation();
+            cam.setLocation(new Vector3f(p.x, groundHeight.apply(p.x, p.z) + eyeHeight, p.z));
+            needsGroundSnap = false;
+        }
         applyLook();
 
         // Horizontal movement in the XZ plane (Y is handled by gravity + jump).
@@ -167,11 +174,9 @@ public final class FpsCamera extends BaseAppState {
                           java.util.function.BiFunction<Float, Float, Float> groundFn) {
         this.collision = world;
         this.groundHeight = groundFn;
-        // Snap to ground on first bind.
-        if (groundHeight != null) {
-            Vector3f p = cam.getLocation();
-            cam.setLocation(new Vector3f(p.x, groundHeight.apply(p.x, p.z) + eyeHeight, p.z));
-        }
+        // Defer the ground snap — cam is only populated by initialize(), which
+        // BaseAppState calls on the next update tick, not on attach.
+        this.needsGroundSnap = (groundFn != null);
     }
 
     private void applyLook() {
