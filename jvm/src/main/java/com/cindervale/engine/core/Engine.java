@@ -56,7 +56,7 @@ public final class Engine {
 
         @Override public void simpleInitApp() {
             assets = new Assets(getAssetManager());
-            scene = new Scene(rootNode, cam, getAssetManager(), assets);
+            scene = new Scene(rootNode, cam, getAssetManager(), assets, viewPort);
             pause = new PauseMenu();
             stateManager.attach(pause);
             game.init(Engine.this, scene);
@@ -64,6 +64,8 @@ public final class Engine {
             // the camera and FpsCamera seeds its yaw/pitch from that direction.
             camera = new FpsCamera();
             stateManager.attach(camera);
+            // Bind the world so the camera clamps to terrain + slides on props.
+            camera.bindWorld(scene.collision, scene.groundHeight);
             System.out.println("[Engine] up — " + renderer.getClass().getSimpleName()
                     + " · " + cfg.width + "x" + cfg.height);
 

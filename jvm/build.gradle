@@ -20,6 +20,7 @@ dependencies {
     implementation "org.jmonkeyengine:jme3-lwjgl3:${jmeVersion}"
     // glTF loading (for the reconverted Mixamo characters, later phases).
     implementation "org.jmonkeyengine:jme3-plugins:${jmeVersion}"
+    implementation "org.jmonkeyengine:jme3-effects:${jmeVersion}"
 }
 
 java {
@@ -50,4 +51,10 @@ task runLauncher(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.cindervale.launcher.LauncherMain'
     standardInput = System.in
+}
+
+task printClasspath {
+    doLast {
+        println(sourceSets.main.runtimeClasspath.asPath)
+    }
 }

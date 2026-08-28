@@ -41,8 +41,13 @@ public final class LauncherMain {
     private static boolean fullscreen = false;
 
     public static void main(String[] args) {
-        // Try to load Poly Haven-adjacent fonts if the game bundled Oswald;
-        // fall back to condensed system faces otherwise.
+        // Force cross-platform (Metal) LAF so JButton.setBackground actually paints.
+        // macOS's Aqua LAF uses native buttons and IGNORES setBackground — which was
+        // making the amber PLAY button invisible on the dark footer panel.
+        try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
+        catch (Exception ignored) {}
+
+        // Prefer the game's bundled fonts (Oswald + Share Tech Mono); fall back to system.
         try {
             File oswald = new File("../godot-reference/assets/ui/fonts/Oswald.ttf");
             if (oswald.exists()) TITLE_FONT = Font.createFont(Font.TRUETYPE_FONT, oswald).deriveFont(Font.PLAIN, 48f);
@@ -298,16 +303,41 @@ public final class LauncherMain {
         v.setForeground(TEXT_DIM);
         p.add(v, BorderLayout.WEST);
 
-        JButton play = new JButton("▶   PLAY");
-        play.setBackground(AMBER);
-        play.setForeground(new Color(0x08, 0x08, 0x0A));
+        JButton play = new PlayButton();
         play.setFont(TITLE_FONT.deriveFont(28f));
-        play.setFocusPainted(false);
-        play.setPreferredSize(new Dimension(300, 56));
-        play.setBorder(BorderFactory.createEmptyBorder(6, 24, 8, 24));
         play.addActionListener(e -> launchGame(frame));
         p.add(play, BorderLayout.EAST);
         return p;
+    }
+
+    /**
+     * PLAY button that paints its own amber background so it's LAF-proof.
+     * (macOS Aqua's native JButton ignores setBackground, which was making the
+     * original invisible on the dark footer.)
+     */
+    private static final class PlayButton extends JButton {
+        private boolean hover = false;
+        PlayButton() {
+            super("▶   PLAY");
+            setForeground(new Color(0x08, 0x08, 0x0A));
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setOpaque(false);
+            setPreferredSize(new Dimension(300, 56));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { hover = true;  repaint(); }
+                @Override public void mouseExited(MouseEvent e)  { hover = false; repaint(); }
+            });
+        }
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(hover ? AMBER.brighter() : AMBER);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private static void launchGame(JFrame frame) {

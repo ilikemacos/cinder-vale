@@ -31,6 +31,15 @@ public final class FpsCamera extends BaseAppState {
     public float walkSpeed = 6f;
     public float sprintMultiplier = 2.2f;
     public float mouseSensitivity = 1.6f;
+    public float eyeHeight = 1.7f;               // metres above ground
+    public float capsuleRadius = 0.45f;
+    public float jumpVelocity = 6.2f;
+    public float gravity = 20f;
+
+    private CollisionWorld collision;
+    private java.util.function.BiFunction<Float, Float, Float> groundHeight;
+    private float velocityY = 0f;
+    private boolean onGround = true;
 
     private SimpleApplication app;
     private Camera cam;
@@ -103,29 +112,66 @@ public final class FpsCamera extends BaseAppState {
         if (!enabledInput) return;
         applyLook();
 
-        // XZ-plane movement basis derived from yaw only (Y stays 0).
+        // Horizontal movement in the XZ plane (Y is handled by gravity + jump).
         tmpFwd.set(-FastMath.sin(yaw), 0f, -FastMath.cos(yaw));
         tmpRight.set(FastMath.cos(yaw), 0f, -FastMath.sin(yaw));
 
-        Vector3f v = new Vector3f();
-        if (kF) v.addLocal(tmpFwd);
-        if (kB) v.subtractLocal(tmpFwd);
-        if (kR) v.addLocal(tmpRight);
-        if (kL) v.subtractLocal(tmpRight);
-        if (v.lengthSquared() > 0.0001f) v.normalizeLocal();
-
-        if (kU) v.y += 1f;
-        if (kD) v.y -= 1f;
+        Vector3f wish = new Vector3f();
+        if (kF) wish.addLocal(tmpFwd);
+        if (kB) wish.subtractLocal(tmpFwd);
+        if (kR) wish.addLocal(tmpRight);
+        if (kL) wish.subtractLocal(tmpRight);
+        if (wish.lengthSquared() > 0.0001f) wish.normalizeLocal();
 
         float speed = walkSpeed * (kSprint ? sprintMultiplier : 1f);
-        v.multLocal(speed * dt);
-        cam.setLocation(cam.getLocation().add(v));
+        wish.multLocal(speed * dt);
+
+        Vector3f from = cam.getLocation();
+        Vector3f desired = from.add(wish);
+
+        // Slide along obstacles instead of walking through them.
+        if (collision != null && wish.lengthSquared() > 0.0001f) {
+            desired = collision.resolve(from, desired, capsuleRadius);
+        }
+
+        // Vertical: jump on Space, gravity always, land on terrain.
+        if (kU && onGround) {
+            velocityY = jumpVelocity;
+            onGround = false;
+        }
+        velocityY -= gravity * dt;
+        desired.y = from.y + velocityY * dt;
+
+        // Ground clamp.
+        if (groundHeight != null) {
+            float g = groundHeight.apply(desired.x, desired.z) + eyeHeight;
+            if (desired.y <= g) {
+                desired.y = g;
+                velocityY = 0f;
+                onGround = true;
+            } else {
+                onGround = false;
+            }
+        }
+
+        cam.setLocation(desired);
     }
 
     /** Enable/disable input (e.g. when the pause menu is open). */
     public void setInputEnabled(boolean on) {
         enabledInput = on;
         app.getInputManager().setCursorVisible(!on);
+    }
+
+    public void bindWorld(CollisionWorld world,
+                          java.util.function.BiFunction<Float, Float, Float> groundFn) {
+        this.collision = world;
+        this.groundHeight = groundFn;
+        // Snap to ground on first bind.
+        if (groundHeight != null) {
+            Vector3f p = cam.getLocation();
+            cam.setLocation(new Vector3f(p.x, groundHeight.apply(p.x, p.z) + eyeHeight, p.z));
+        }
     }
 
     private void applyLook() {

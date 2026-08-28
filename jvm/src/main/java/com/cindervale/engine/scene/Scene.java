@@ -5,12 +5,16 @@ import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.filters.FogFilter;
 import com.jme3.renderer.Camera;
+import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.util.SkyFactory;
 
 import com.cindervale.engine.assets.Assets;
+import com.cindervale.engine.input.CollisionWorld;
 
 /**
  * The game's view of the world (doc §6). Wraps JME's rootNode + camera + lights
@@ -22,17 +26,23 @@ public final class Scene {
     public final Node root;
     public final Camera cam;
     public final Assets assets;
+    public final CollisionWorld collision = new CollisionWorld();
+    /** Optional callback for terrain height lookup (game supplies it). */
+    public java.util.function.BiFunction<Float, Float, Float> groundHeight;
     private final AssetManager jmeAssets;
+    private final ViewPort viewPort;
 
     private DirectionalLight sun;
     private AmbientLight ambient;
     private Spatial sky;
+    private FogFilter fog;
 
-    public Scene(Node root, Camera cam, AssetManager jmeAssets, Assets assets) {
+    public Scene(Node root, Camera cam, AssetManager jmeAssets, Assets assets, ViewPort viewPort) {
         this.root = root;
         this.cam = cam;
         this.jmeAssets = jmeAssets;
         this.assets = assets;
+        this.viewPort = viewPort;
     }
 
     /** Add sun + ambient with sensible wasteland defaults. */
@@ -60,6 +70,17 @@ public final class Scene {
 
     public void add(Spatial s)    { root.attachChild(s); }
     public void remove(Spatial s) { root.detachChild(s); }
+
+    /** Enable exponential distance fog with the given colour, density and distance. */
+    public void enableFog(ColorRGBA color, float density, float distance) {
+        FilterPostProcessor fpp = new FilterPostProcessor(jmeAssets);
+        fog = new FogFilter();
+        fog.setFogColor(color);
+        fog.setFogDensity(density);
+        fog.setFogDistance(distance);
+        fpp.addFilter(fog);
+        viewPort.addProcessor(fpp);
+    }
 
     public DirectionalLight sun()  { return sun; }
     public AmbientLight ambient()  { return ambient; }
