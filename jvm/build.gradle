@@ -1,0 +1,53 @@
+plugins {
+    id 'application'
+}
+
+group = 'com.cindervale'
+version = '0.5'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    jmeVersion = '3.6.1-stable'
+}
+
+dependencies {
+    // jMonkeyEngine core + LWJGL3 backend (LWJGL3 has macOS arm64 natives; LWJGL2 does not).
+    implementation "org.jmonkeyengine:jme3-core:${jmeVersion}"
+    implementation "org.jmonkeyengine:jme3-desktop:${jmeVersion}"
+    implementation "org.jmonkeyengine:jme3-lwjgl3:${jmeVersion}"
+    // glTF loading (for the reconverted Mixamo characters, later phases).
+    implementation "org.jmonkeyengine:jme3-plugins:${jmeVersion}"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'com.cindervale.Main'
+    // macOS requires GLFW/LWJGL to run on the first thread. Cap heap for the 8GB M1.
+    applicationDefaultJvmArgs = ['-XstartOnFirstThread', '-Xmx2g']
+}
+
+run {
+    standardInput = System.in
+    // Forward -D system properties from the Gradle CLI (for the autoshot hook).
+    ['cindervale.autoshot', 'cindervale.shotpath'].each { k ->
+        if (project.hasProperty(k)) systemProperty k, project.property(k)
+        if (System.getProperty(k) != null) systemProperty k, System.getProperty(k)
+    }
+}
+
+// Runs the Lunar-style launcher (spawns the game as a child process).
+task runLauncher(type: JavaExec) {
+    group = 'application'
+    description = 'Launch the Cinder Vale front-end launcher'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.cindervale.launcher.LauncherMain'
+    standardInput = System.in
+}

@@ -10,3 +10,11 @@ assets_src/
 
 # Exported binaries (.app/.dmg) — too large for git, build locally.
 build/
+
+# JVM game — Poly Haven env art pack (CC0, but big). Bundle it in-place instead.
+jvm/src/main/resources/assets/env/
+# Gradle build outputs
+jvm/.gradle/
+jvm/build/
+jvm/gradle/
+!jvm/gradle/wrapper/
