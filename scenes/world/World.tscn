@@ -1,0 +1,207 @@
+[gd_scene load_steps=9 format=3 uid="uid://cvworld01"]
+
+[ext_resource type="PackedScene" uid="uid://cvplayer01" path="res://scenes/characters/Player.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/world/World.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/world/WorldStreamer.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/ui/HearthLink.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/ui/CombatHUD.gd" id="5"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky"]
+sky_top_color = Color(0.32, 0.48, 0.72, 1)
+sky_horizon_color = Color(0.72, 0.73, 0.68, 1)
+sky_curve = 0.12
+ground_bottom_color = Color(0.4, 0.36, 0.3, 1)
+ground_horizon_color = Color(0.62, 0.58, 0.5, 1)
+sun_angle_max = 8.0
+use_debanding = true
+
+[sub_resource type="Sky" id="skyres"]
+sky_material = SubResource("sky")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("skyres")
+ambient_light_source = 3
+ambient_light_color = Color(0.68, 0.68, 0.66, 1)
+ambient_light_energy = 0.85
+ambient_light_sky_contribution = 0.85
+tonemap_mode = 2
+tonemap_white = 5.0
+fog_enabled = true
+fog_mode = 1
+fog_light_color = Color(0.74, 0.73, 0.66, 1)
+fog_sun_scatter = 0.2
+fog_density = 1.0
+fog_aerial_perspective = 0.6
+fog_depth_begin = 160.0
+fog_depth_end = 720.0
+fog_depth_curve = 0.85
+adjustment_enabled = true
+adjustment_brightness = 1.02
+adjustment_contrast = 1.06
+adjustment_saturation = 1.15
+
+[sub_resource type="StandardMaterial3D" id="watermat"]
+albedo_color = Color(0.16, 0.24, 0.27, 0.72)
+transparency = 1
+roughness = 0.1
+metallic = 0.2
+
+[sub_resource type="PlaneMesh" id="watermesh"]
+size = Vector2(900, 900)
+
+[node name="World" type="Node3D"]
+script = ExtResource("2")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.86, -0.35, 0.37, 0, 0.72, 0.69, -0.51, -0.6, 0.62, 0, 60, 0)
+light_color = Color(1.0, 0.96, 0.86, 1)
+light_energy = 1.25
+shadow_enabled = true
+shadow_blur = 1.0
+directional_shadow_mode = 1
+directional_shadow_max_distance = 130.0
+directional_shadow_split_1 = 0.08
+directional_shadow_split_2 = 0.25
+
+[node name="Water" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0, 0)
+mesh = SubResource("watermesh")
+material_override = SubResource("watermat")
+
+[node name="Streamer" type="Node3D" parent="."]
+script = ExtResource("3")
+player_path = NodePath("../Player")
+
+[node name="Player" parent="." instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 10, 270)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Objective" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 700.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(0.95, 0.75, 0.35, 1)
+
+[node name="Controls" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 680.0
+offset_right = 900.0
+offset_bottom = 715.0
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "WASD move · Shift sprint · C crouch · Space jump · LMB attack · V camera · Tab map · Esc mouse"
+
+[node name="CombatHUD" type="CanvasLayer" parent="."]
+script = ExtResource("5")
+player_path = NodePath("../Player")
+
+[node name="Flash" type="ColorRect" parent="CombatHUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.6, 0.05, 0.05, 0)
+mouse_filter = 2
+
+[node name="Crosshair" type="Label" parent="CombatHUD"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -6.0
+offset_top = -14.0
+offset_right = 6.0
+offset_bottom = 14.0
+theme_override_colors/font_color = Color(0.95, 0.75, 0.35, 0.85)
+theme_override_font_sizes/font_size = 22
+text = "+"
+
+[node name="HP" type="ProgressBar" parent="CombatHUD"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -54.0
+offset_right = 280.0
+offset_bottom = -30.0
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="Alert" type="Label" parent="CombatHUD"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 60.0
+offset_right = 160.0
+offset_bottom = 84.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.9, 0.4, 0.25, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Dead" type="Label" parent="CombatHUD"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -20.0
+offset_right = 200.0
+offset_bottom = 30.0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.8, 0.1, 0.1, 1)
+theme_override_font_sizes/font_size = 48
+text = "YOU DIED"
+
+[node name="Ammo" type="Label" parent="CombatHUD"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -60.0
+offset_right = -24.0
+offset_bottom = -24.0
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.95, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 30
+text = "30 / 120"
+
+[node name="HearthLink" type="CanvasLayer" parent="."]
+process_mode = 3
+script = ExtResource("4")
+player_path = NodePath("../Player")
+
+[node name="Fade" type="ColorRect" parent="HearthLink"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0)
+mouse_filter = 2
+
+[node name="Panel" type="Panel" parent="HearthLink"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -320.0
+offset_right = 320.0
+offset_bottom = 320.0
+
+[node name="Title" type="Label" parent="HearthLink/Panel"]
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 400.0
+offset_bottom = 34.0
+theme_override_colors/font_color = Color(0.95, 0.75, 0.35, 1)
+text = "HEARTHLINK — CINDER VALE  ·  click a marker to fast travel"
+
+[node name="Map" type="Control" parent="HearthLink/Panel"]
+offset_left = 20.0
+offset_top = 40.0
+offset_right = 620.0
+offset_bottom = 620.0

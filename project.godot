@@ -1,0 +1,72 @@
+; Cinder Vale — Godot 4.4 project
+; Original IP. No vault. macOS arm64 target.
+
+config_version=5
+
+[application]
+
+config/name="Cinder Vale"
+config/description="Grounded PNW-wasteland scavver RPG. Original IP."
+run/main_scene="res://scenes/ui/Launcher.tscn"
+config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+WorldState="*res://scripts/world/WorldState.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[input]
+
+move_forward={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":87,"key_label":0,"unicode":119,"location":0,"echo":false,"script":null)]
+}
+move_back={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":83,"key_label":0,"unicode":115,"location":0,"echo":false,"script":null)]
+}
+move_left={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":65,"key_label":0,"unicode":97,"location":0,"echo":false,"script":null)]
+}
+move_right={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":68,"key_label":0,"unicode":100,"location":0,"echo":false,"script":null)]
+}
+jump={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":32,"key_label":0,"unicode":32,"location":0,"echo":false,"script":null)]
+}
+sprint={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":4194325,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)]
+}
+crouch={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":67,"key_label":0,"unicode":99,"location":0,"echo":false,"script":null)]
+}
+toggle_camera={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":86,"key_label":0,"unicode":118,"location":0,"echo":false,"script":null)]
+}
+reload={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","physical_keycode":82,"key_label":0,"unicode":114,"location":0,"echo":false,"script":null)]
+}
+
+[physics]
+
+common/physics_ticks_per_second=30
+3d/default_gravity=24.0
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_3d=0
