@@ -144,13 +144,17 @@ func _build() -> void:
 func _add_label() -> void:
 	var l := Label3D.new()
 	l.text = data["name"]
-	l.font_size = 64
-	l.pixel_size = 0.02
+	l.font = UITheme.mono_font()
+	l.font_size = 40
+	l.pixel_size = 0.014
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.modulate = Color(0.95, 0.75, 0.35)  # HearthLink amber
-	l.outline_modulate = Color(0, 0, 0, 0.8)
-	l.no_depth_test = false
-	l.position = Vector3(0, 18, 0)
+	l.modulate = Color(0.95, 0.75, 0.35, 0.85)
+	l.outline_modulate = Color(0, 0, 0, 0.7)
+	l.position = Vector3(0, 12, 0)
+	# Only readable up close — the compass carries distance wayfinding.
+	l.visibility_range_end = 70.0
+	l.visibility_range_end_margin = 25.0
+	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	add_child(l)
 
 func _add_reveal() -> void:

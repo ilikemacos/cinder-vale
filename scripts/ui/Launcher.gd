@@ -10,15 +10,36 @@ const PANEL := Color(0.09, 0.09, 0.11, 0.92)
 var _content: Control
 var _pages := {}
 
+var _title_font: FontFile
+var _mono_font: FontFile
+
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	theme = UITheme.build()
+	_title_font = UITheme.title_font()
+	_mono_font = UITheme.mono_font()
 	_bg()
 	_top_bar()
 	_nav()
 	_content_area()
 	_play_button()
+	_scanlines()
 	_show_page("home")
+	# Boot fade-in.
+	modulate = Color(1, 1, 1, 0)
+	create_tween().tween_property(self, "modulate:a", 1.0, 0.5)
+
+func _scanlines() -> void:
+	var sl := Control.new()
+	sl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sl.draw.connect(func():
+		var h := sl.size.y
+		for y in range(0, int(h), 3):
+			sl.draw_line(Vector2(0, y), Vector2(sl.size.x, y), Color(0, 0, 0, 0.06), 1.0))
+	sl.resized.connect(func(): sl.queue_redraw())
+	add_child(sl)
 
 func _bg() -> void:
 	var tex := load("res://assets/ui/menu_bg.png")
@@ -47,16 +68,17 @@ func _bg() -> void:
 func _top_bar() -> void:
 	var title := Label.new()
 	title.text = "CINDER  VALE"
-	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_font_override("font", _title_font)
+	title.add_theme_font_size_override("font_size", 58)
 	title.add_theme_color_override("font_color", AMBER)
-	title.position = Vector2(48, 34)
+	title.position = Vector2(48, 28)
 	add_child(title)
 
 	var sub := Label.new()
-	sub.text = "a scavver's tale · Pacific Northwest wasteland"
-	sub.add_theme_font_size_override("font_size", 16)
-	sub.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	sub.position = Vector2(52, 86)
+	sub.text = "> hearthlink terminal · pacific northwest wasteland_"
+	sub.add_theme_font_size_override("font_size", 15)
+	sub.add_theme_color_override("font_color", Color(0.5, 0.85, 0.5))
+	sub.position = Vector2(52, 92)
 	add_child(sub)
 
 	var ver := Label.new()
@@ -123,11 +145,22 @@ func _panel(title: String) -> Control:
 	box.offset_bottom = -22
 	box.add_theme_constant_override("separation", 12)
 	bg.add_child(box)
+	# Terminal window header: a path line + the section title.
+	var path := Label.new()
+	path.text = "root@cindervale:~ $ cat " + title.to_lower().replace(" ", "_")
+	path.add_theme_font_size_override("font_size", 13)
+	path.add_theme_color_override("font_color", Color(0.5, 0.85, 0.5))
+	box.add_child(path)
 	var h := Label.new()
 	h.text = title
-	h.add_theme_font_size_override("font_size", 26)
+	h.add_theme_font_override("font", _title_font)
+	h.add_theme_font_size_override("font_size", 28)
 	h.add_theme_color_override("font_color", AMBER)
 	box.add_child(h)
+	var rule := ColorRect.new()
+	rule.color = Color(AMBER.r, AMBER.g, AMBER.b, 0.35)
+	rule.custom_minimum_size = Vector2(0, 2)
+	box.add_child(rule)
 	# The ColorRect is the returned page root; the box is its child[0].
 	bg.set_meta("box", box)
 	return bg
@@ -157,7 +190,7 @@ func _page_settings() -> Control:
 
 	box.add_child(_row("Resolution", _make_res_option()))
 	box.add_child(_row("Quality (render scale)", _make_quality_option()))
-	box.add_child(_row("Memory budget", _make_ram_option()))
+	box.add_child(_row("World streaming", _make_streaming_option()))
 	box.add_child(_row("Renderer", _make_renderer_option()))
 	var full := CheckButton.new()
 	full.text = "Fullscreen"
@@ -199,17 +232,15 @@ func _make_res_option() -> OptionButton:
 		DisplayServer.window_set_position((scr - reslist[i]) / 2))
 	return o
 
-func _make_ram_option() -> OptionButton:
-	# Advisory memory budget: higher keeps the whole valley resident (fewer
-	# streaming hitches, more RAM); lower streams tighter. Godot is native, so
-	# this is a real streaming trade-off, not a Java-style hard heap cap.
+func _make_streaming_option() -> OptionButton:
+	# Low streams one tile at a time (least RAM); High keeps the whole valley
+	# resident (no streaming hitches, more RAM). Real trade-off, plainly named.
 	var o := OptionButton.new()
-	var gb := [2, 3, 4, 6, 8]
-	for g in gb:
-		o.add_item("%d GB" % g)
-	o.selected = 2  # 4 GB
+	o.add_item("Low  (stream tiles)")
+	o.add_item("High (whole valley)")
+	o.selected = 0
 	WorldState.ram_budget_gb = 4
-	o.item_selected.connect(func(i): WorldState.ram_budget_gb = gb[i])
+	o.item_selected.connect(func(i): WorldState.ram_budget_gb = (8 if i == 1 else 4))
 	return o
 
 func _make_quality_option() -> OptionButton:
@@ -275,6 +306,7 @@ func _play_button() -> void:
 	play.offset_right = 160
 	play.offset_top = -118
 	play.offset_bottom = -44
+	play.add_theme_font_override("font", _title_font)
 	play.add_theme_color_override("font_color", Color(0.05, 0.05, 0.05))
 	play.add_theme_color_override("font_hover_color", Color(0, 0, 0))
 	var sb := StyleBoxFlat.new()
@@ -290,4 +322,12 @@ func _play_button() -> void:
 	add_child(play)
 
 func _on_play() -> void:
-	get_tree().change_scene_to_file("res://scenes/world/World.tscn")
+	# Fade to black, then boot the world.
+	var fade := ColorRect.new()
+	fade.color = Color(0, 0, 0, 0)
+	fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(fade)
+	var tw := create_tween()
+	tw.tween_property(fade, "color:a", 1.0, 0.45)
+	tw.tween_callback(func(): get_tree().change_scene_to_file("res://scenes/world/World.tscn"))

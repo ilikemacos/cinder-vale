@@ -8,39 +8,41 @@ first_scan_filesystem: begin: Project initialization steps: 5
 	first_scan_filesystem: step 4: Initializing plugins...
 	first_scan_filesystem: step 5: Starting file scan...
 first_scan_filesystem: end
-update_scripts_classes: begin: Registering global classes... steps: 9
-	update_scripts_classes: step 0: Dog
+update_scripts_classes: begin: Registering global classes... steps: 6
+	update_scripts_classes: step 0: 
 	update_scripts_classes: step 1: 
 	update_scripts_classes: step 2: 
-	update_scripts_classes: step 3: 
-	update_scripts_classes: step 4: 
+	update_scripts_classes: step 3: UITheme
+	update_scripts_classes: step 4: POIBlockout
 	update_scripts_classes: step 5: 
-	update_scripts_classes: step 6: POIBlockout
-	update_scripts_classes: step 7: WorldStreamer
-	update_scripts_classes: step 8: 
 update_scripts_classes: end
-reimport: begin: (Re)Importing Assets steps: 1
+_update_scan_actions: begin: Scanning actions... steps: 2
+	_update_scan_actions: step 0: Oswald.ttf
+	_update_scan_actions: step 1: ShareTechMono.ttf
+_update_scan_actions: end
+reimport: begin: (Re)Importing Assets steps: 2
 	reimport: step 0: Preparing files to reimport...
+	reimport: step 1: Preparing files to reimport...
 	reimport: step 0: Executing pre-reimport operations...
-	reimport: step 0: menu_bg.png
-	reimport: step 1: Finalizing Asset Import...
+	reimport: step 0: Oswald.ttf
+	reimport: step 1: ShareTechMono.ttf
+	reimport: step 2: Finalizing Asset Import...
 reimport: end
-update_script_paths_documentation: begin: Updating scripts documentation steps: 9
-	update_script_paths_documentation: step 0: Dog.gd
-	update_script_paths_documentation: step 1: shot_hero.gd
-	update_script_paths_documentation: step 2: shot_player.gd
-	update_script_paths_documentation: step 3: shot_road.gd
-	update_script_paths_documentation: step 4: CombatHUD.gd
-[1;35mSCRIPT ERROR:[0;95m Parse Error: Cannot return value of type "ColorRect" because the function return type is "VBoxContainer".
-[0;90m          at: GDScript::reload (res://scripts/ui/Launcher.gd:133)[0m
-[1;31mERROR:[0;91m Failed to load script "res://scripts/ui/Launcher.gd" with error "Parse error".
+update_script_paths_documentation: begin: Updating scripts documentation steps: 6
+[1;35mSCRIPT ERROR:[0;95m Parse Error: Cannot infer the type of "fwd" variable because the value doesn't have a set type.
+[0;90m          at: GDScript::reload (res://scripts/ui/CombatHUD.gd:72)[0m
+[1;35mSCRIPT ERROR:[0;95m Parse Error: Cannot infer the type of "nearest" variable because the value doesn't have a set type.
+[0;90m          at: GDScript::reload (res://scripts/ui/CombatHUD.gd:97)[0m
+[1;31mERROR:[0;91m Failed to load script "res://scripts/ui/CombatHUD.gd" with error "Parse error".
 [0;90m   at: load (modules/gdscript/gdscript.cpp:3022)[0m
-	update_script_paths_documentation: step 5: Launcher.gd
-	update_script_paths_documentation: step 6: POIBlockout.gd
-	update_script_paths_documentation: step 7: WorldStreamer.gd
-	update_script_paths_documentation: step 8: Player.gd
+	update_script_paths_documentation: step 0: CombatHUD.gd
+	update_script_paths_documentation: step 1: HearthLink.gd
+	update_script_paths_documentation: step 2: Launcher.gd
+	update_script_paths_documentation: step 3: UITheme.gd
+	update_script_paths_documentation: step 4: POIBlockout.gd
+	update_script_paths_documentation: step 5: World.gd
 update_script_paths_documentation: end
-reimport: begin: (Re)Importing Assets steps: 1
+reimport: begin: (Re)Importing Assets steps: 2
 	reimport: step 0: Executing post-reimport operations...
 reimport: end
 loading_editor_layout: begin: Loading editor steps: 5

@@ -7,3 +7,6 @@ export/
 # Raw Mixamo source assets — large (>100MB) and not for redistribution.
 # Drop your own Mixamo download here and run scripts/tools/build_character.gd.
 assets_src/
+
+# Exported binaries (.app/.dmg) — too large for git, build locally.
+build/

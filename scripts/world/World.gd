@@ -3,7 +3,6 @@ extends Node3D
 ## the opening objective. No vault, no bunker — the scavver is already here.
 
 @onready var _player: CharacterBody3D = $Player
-@onready var _objective: Label = $HUD/Objective
 
 func _ready() -> void:
 	_player.global_transform = WorldConfig.spawn_transform()
@@ -11,8 +10,24 @@ func _ready() -> void:
 	var to_town: Vector2 = Vector2(0, 0) - WorldConfig.BUS_WRECK
 	_player.rotation.y = atan2(to_town.x, to_town.y)
 	WorldState.discover("town")  # town is visible on the map from the start
-	_objective.text = "OBJECTIVE: Reach Cinder Vale. (Note on the bus dash.)\nTab: HearthLink map"
 	_build_backdrop()
+	_intro_fade()
+
+func _intro_fade() -> void:
+	var cl := CanvasLayer.new()
+	cl.layer = 128
+	add_child(cl)
+	var f := ColorRect.new()
+	f.color = Color(0, 0, 0, 1)
+	f.set_anchors_preset(Control.PRESET_FULL_RECT)
+	f.anchor_right = 1.0
+	f.anchor_bottom = 1.0
+	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cl.add_child(f)
+	var tw := create_tween()
+	tw.tween_interval(0.2)
+	tw.tween_property(f, "color:a", 0.0, 0.7)
+	tw.tween_callback(cl.queue_free)
 
 func _build_backdrop() -> void:
 	# Two static rings of hazy mountain silhouettes on the horizon, well beyond
