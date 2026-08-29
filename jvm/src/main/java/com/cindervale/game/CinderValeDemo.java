@@ -38,16 +38,19 @@ public final class CinderValeDemo implements Game {
                 "assets/env/cinder-vale-env-art/hdris/rural_asphalt_road_2k.hdr");
 
         scene.addDefaultLighting();
-        // Cool the sun a touch so it reads as an overcast day instead of midday.
+        // FO4 golden-hour cast: warmer sun with a subtle amber tint, and a
+        // faintly amber ambient — dry, dusty, "the day after the bombs".
         if (scene.sun() != null) {
-            scene.sun().setColor(new ColorRGBA(0.95f, 0.94f, 0.90f, 1f).mult(1.05f));
+            scene.sun().setColor(new ColorRGBA(1.10f, 0.96f, 0.80f, 1f));
         }
         if (scene.ambient() != null) {
-            scene.ambient().setColor(ColorRGBA.White.mult(0.55f));
+            scene.ambient().setColor(new ColorRGBA(0.75f, 0.70f, 0.60f, 1f));
         }
 
-        // Distance fog — warm-grey haze that eats mountains into the sky.
-        scene.enableFog(new ColorRGBA(0.78f, 0.78f, 0.76f, 1f), 1.6f, 260f);
+        // Distance fog — warm amber haze pulling everything toward that FO4
+        // "post-bomb morning" look. Density kept low so the terrain reads at
+        // close range; only the far mountains + horizon fade into the haze.
+        scene.enableFog(new ColorRGBA(0.82f, 0.72f, 0.55f, 1f), 0.9f, 320f);
 
         // Tell the engine how to look up ground height for terrain-clamp.
         scene.groundHeight = (x, z) -> Terrain.groundY(x, z);

@@ -70,6 +70,55 @@ public final class Scatter {
         }
         scene.add(scatterRoot);
 
+        // Wrecked cars — the iconic Fallout roadside prop. Scattered along the
+        // highway corridor for a "convoy caught in the blast" feel.
+        Node cars = new Node("WreckedCars");
+        for (int i = 0; i < 14; i++) {
+            // Bias placement near the middle-N/S road corridor.
+            float x = (rng.nextFloat() - 0.5f) * 40f + FastMath.sin(i * 0.7f) * 8f;
+            float z = rng.nextFloat() * (WorldConfig.WORLD_HALF * 1.8f) - WorldConfig.WORLD_HALF * 0.9f;
+            if (!WorldConfig.isBuildable(x, z)) continue;
+            if (WorldConfig.slope01(x, z) > 0.4f) continue;
+            Node car = WreckedCar.build(a);
+            car.setLocalTranslation(x, Terrain.groundY(x, z), z);
+            car.setLocalRotation(new Quaternion().fromAngles(0,
+                    rng.nextFloat() * FastMath.TWO_PI, 0));
+            cars.attachChild(car);
+            scene.collision.add(x, z, 2.0f, 1.4f);
+        }
+        scene.add(cars);
+
+        // Ruined brick walls — chunks of collapsed buildings for silhouette.
+        Node ruins = new Node("Ruins");
+        for (int i = 0; i < 18; i++) {
+            float x = rng.nextFloat() * (WorldConfig.WORLD_HALF * 1.8f) - WorldConfig.WORLD_HALF * 0.9f;
+            float z = rng.nextFloat() * (WorldConfig.WORLD_HALF * 1.8f) - WorldConfig.WORLD_HALF * 0.9f;
+            if (!WorldConfig.isBuildable(x, z)) continue;
+            if (WorldConfig.slope01(x, z) > 0.5f) continue;
+            Node wall = Ruins.wallFragment(a, rng.nextBoolean(), rng);
+            wall.setLocalTranslation(x, Terrain.groundY(x, z), z);
+            wall.setLocalRotation(new Quaternion().fromAngles(0,
+                    rng.nextFloat() * FastMath.TWO_PI, 0));
+            ruins.attachChild(wall);
+            scene.collision.add(x, z, 1.4f, 2.0f);
+        }
+        scene.add(ruins);
+
+        // A few radioactive barrels with green glow — atmosphere at low
+        // density (max 3, each carries a point light — respect the light budget).
+        Node radBarrels = new Node("RadBarrels");
+        for (int i = 0; i < 3; i++) {
+            float x = (rng.nextFloat() - 0.5f) * (WorldConfig.WORLD_HALF * 1.6f);
+            float z = (rng.nextFloat() - 0.5f) * (WorldConfig.WORLD_HALF * 1.6f);
+            if (!WorldConfig.isBuildable(x, z)) continue;
+            if (WorldConfig.slope01(x, z) > 0.4f) continue;
+            Node b = Ruins.radBarrel(a);
+            b.setLocalTranslation(x, Terrain.groundY(x, z), z);
+            radBarrels.attachChild(b);
+            scene.collision.add(x, z, 0.5f, 1.5f);
+        }
+        scene.add(radBarrels);
+
         // Dead trees — leafless silhouettes for that Fallout look.
         Node trees = new Node("DeadTrees");
         Material trunkMat = a.litColor(new ColorRGBA(0.16f, 0.12f, 0.08f, 1f));
