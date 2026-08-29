@@ -12,6 +12,7 @@ import com.cindervale.engine.input.FpsCamera;
 import com.cindervale.game.enemies.Enemy;
 import com.cindervale.game.enemies.Spawner;
 import com.cindervale.game.items.Rifle;
+import com.cindervale.game.items.TracerFX;
 import com.cindervale.game.world.Landmarks;
 import com.cindervale.game.world.Road;
 import com.cindervale.game.world.Scatter;
@@ -35,6 +36,7 @@ import com.jme3.scene.Node;
 public final class CinderValeDemo implements Game {
 
     private Spawner spawner;
+    private TracerFX tracers;
     private Engine engine;
     private Scene scene;
     private float playerHp = 100f;
@@ -107,16 +109,31 @@ public final class CinderValeDemo implements Game {
         spawner.spawn(scene, a, 6, 3);
         System.out.println("[Game] spawned " + spawner.all.size() + " hostiles");
 
+        // Bullet tracer + muzzle-flash pool. Fed by the fire callback below.
+        tracers = new TracerFX(a, scene);
+
         // Left-click = fire raycast at nearest enemy under the crosshair.
         engine.registerFire(() -> {
             Vector3f origin = scene.cam.getLocation();
-            Vector3f dir = scene.cam.getDirection();
-            Enemy hit = spawner.raycast(origin, dir, 90f);
+            Vector3f dir = scene.cam.getDirection().normalize();
+            float range = 90f;
+            Enemy hit = spawner.raycast(origin, dir, range);
+            Vector3f impact;
             if (hit != null) {
                 hit.takeDamage(28f);
+                impact = hit.centre();
                 System.out.println("[Fire] hit " + hit.node.getName()
                         + "  hp=" + hit.health + (hit.alive ? "" : "  DEAD"));
+            } else {
+                impact = origin.add(dir.mult(range));
             }
+            // Push the muzzle a little down + right of the eye so the tracer
+            // doesn't obscure the crosshair. Rough viewmodel origin.
+            Vector3f muzzle = origin
+                    .add(dir.mult(0.8f))
+                    .add(scene.cam.getLeft().mult(-0.15f))
+                    .add(scene.cam.getUp().mult(-0.12f));
+            tracers.fire(muzzle, impact);
         });
     }
 
@@ -131,5 +148,6 @@ public final class CinderValeDemo implements Game {
                         + "  hp=" + playerHp);
             }
         }
+        if (tracers != null) tracers.tick(dt);
     }
 }
