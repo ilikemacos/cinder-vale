@@ -49,6 +49,18 @@ public final class Engine {
     public Assets assets() { return assets; }
     public boolean isPaused() { return pause != null && pause.isOpen(); }
 
+    /** Register a "fire" callback bound to left mouse — one shot per press. */
+    public void registerFire(Runnable onFire) {
+        if (app == null) return;
+        var im = app.getInputManager();
+        final String name = "cv_fire";
+        im.addMapping(name, new com.jme3.input.controls.MouseButtonTrigger(
+                com.jme3.input.MouseInput.BUTTON_LEFT));
+        im.addListener((com.jme3.input.controls.ActionListener) (n, pressed, tpf) -> {
+            if (pressed && !isPaused()) onFire.run();
+        }, name);
+    }
+
     /** Internal — JME app that hands lifecycle to the outer Engine + Game. */
     private final class JmeApp extends SimpleApplication {
         private float autoshotAt = -1f;         // seconds

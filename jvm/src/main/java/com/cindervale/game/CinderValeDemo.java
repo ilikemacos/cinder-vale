@@ -8,11 +8,17 @@ import com.cindervale.engine.assets.Assets;
 import com.cindervale.engine.core.Engine;
 import com.cindervale.engine.core.Game;
 import com.cindervale.engine.scene.Scene;
+import com.cindervale.engine.input.FpsCamera;
+import com.cindervale.game.enemies.Enemy;
+import com.cindervale.game.enemies.Spawner;
 import com.cindervale.game.items.Rifle;
 import com.cindervale.game.world.Road;
 import com.cindervale.game.world.Scatter;
 import com.cindervale.game.world.Terrain;
 import com.cindervale.game.world.WorldConfig;
+import com.jme3.input.MouseInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.math.Quaternion;
 import com.jme3.scene.Node;
 
@@ -27,8 +33,15 @@ import com.jme3.scene.Node;
  */
 public final class CinderValeDemo implements Game {
 
+    private Spawner spawner;
+    private Engine engine;
+    private Scene scene;
+    private float playerHp = 100f;
+
     @Override
     public void init(Engine engine, Scene scene) {
+        this.engine = engine;
+        this.scene = scene;
         Assets a = scene.assets;
 
         // Sky: overcast HDRI (falls back to the rural asphalt one if missing).
@@ -72,24 +85,46 @@ public final class CinderValeDemo implements Game {
         scene.cam.setLocation(spawn);
         scene.cam.lookAt(new Vector3f(0f, spawn.y - 0.3f, 0f), Vector3f.UNIT_Y);
 
-        // Rifle: dropped at spawn so the player literally starts *at* the gun,
-        // slightly right of the camera at hip height. Scaled up 3x so it reads
-        // clearly even when you first look down. Viewmodel-in-camera can come
-        // later; this is a solid, visible starting weapon.
+        // Rifle: dropped as a real-scale pickup sitting on the road just ahead
+        // of spawn. The player's *equipped* rifle is abstract (LMB fires from
+        // the camera) until we get a proper viewmodel viewport in a later pass.
         Node rifle = Rifle.build(a);
-        rifle.setLocalScale(3.0f);
-        rifle.setLocalTranslation(spawn.x + 0.8f,
-                Terrain.groundY(spawn.x + 0.8f, spawn.z) + 0.9f,
-                spawn.z + 0.2f);
+        rifle.setLocalScale(1.0f);
+        float rx = spawn.x - 3f;
+        float rz = spawn.z - 6f;
+        rifle.setLocalTranslation(rx, Terrain.groundY(rx, rz) + 0.1f, rz);
         rifle.setLocalRotation(new Quaternion().fromAngles(
-                (float) Math.toRadians(0),
-                (float) Math.toRadians(-25),
-                (float) Math.toRadians(-8)));
+                0, (float) Math.toRadians(45), 0));
         scene.add(rifle);
+
+        // Spawn hostiles: 6 zombies + 3 predators seeded around the wasteland.
+        spawner = new Spawner();
+        spawner.spawn(scene, a, 6, 3);
+        System.out.println("[Game] spawned " + spawner.all.size() + " hostiles");
+
+        // Left-click = fire raycast at nearest enemy under the crosshair.
+        engine.registerFire(() -> {
+            Vector3f origin = scene.cam.getLocation();
+            Vector3f dir = scene.cam.getDirection();
+            Enemy hit = spawner.raycast(origin, dir, 90f);
+            if (hit != null) {
+                hit.takeDamage(28f);
+                System.out.println("[Fire] hit " + hit.node.getName()
+                        + "  hp=" + hit.health + (hit.alive ? "" : "  DEAD"));
+            }
+        });
     }
 
     @Override
     public void update(float dt) {
-        // Static wasteland for now — enemies + gunplay reuse the ported systems next.
+        if (spawner != null) {
+            spawner.tick(dt, scene.cam.getLocation());
+            float dmg = spawner.drainDamage();
+            if (dmg > 0f) {
+                playerHp = Math.max(0f, playerHp - dmg);
+                System.out.println("[Damage] player hit for " + dmg
+                        + "  hp=" + playerHp);
+            }
+        }
     }
 }

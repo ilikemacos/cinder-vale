@@ -75,6 +75,22 @@ public final class Assets {
         return t;
     }
 
+    /** PBR material from an ambientCG-style triplet (Color/NormalGL/Roughness). */
+    public Material pbrTriplet(String subfolder, String baseName) {
+        String key = "cg:" + subfolder + "/" + baseName;
+        Material cached = matCache.get(key);
+        if (cached != null) return cached;
+        String base = "assets/env/cinder-vale-guns-cars-creatures/" + subfolder + "/" + baseName;
+        Material m = new Material(jme, "Common/MatDefs/Light/PBRLighting.j3md");
+        m.setTexture("BaseColorMap", tex(base + "_Color.jpg", true));
+        m.setTexture("NormalMap", tex(base + "_NormalGL.jpg", false));
+        m.setTexture("RoughnessMap", tex(base + "_Roughness.jpg", false));
+        m.setFloat("Metallic", 0.0f);
+        m.setColor("BaseColor", ColorRGBA.White);
+        matCache.put(key, m);
+        return m;
+    }
+
     /** Apply a material to every Geometry under a spatial (kits often nest meshes). */
     public static void applyMaterial(Spatial s, Material m) {
         if (s instanceof Geometry g) { g.setMaterial(m); return; }
