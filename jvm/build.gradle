@@ -58,3 +58,81 @@ task printClasspath {
         println(sourceSets.main.runtimeClasspath.asPath)
     }
 }
+
+// -----------------------------------------------------------------------------
+// Standalone packaging: Launcher.app  (Lunar-Client-style external app)
+// -----------------------------------------------------------------------------
+// Two-step build:
+//   1) fatJar   — one shaded jar with launcher + game + every runtime dep,
+//                 plus the Poly Haven assets bundled from src/main/resources.
+//   2) jpackage — invokes JDK 21's jpackage on that jar to produce a real .app
+//                 with a trimmed JRE bundled inside (no user Java needed).
+// The launcher (Swing/AWT) is the app's main; PLAY spawns the game as a child
+// process using the SAME bundled JRE (via System.getProperty("java.home")) and
+// passes -XstartOnFirstThread which JME requires but AWT would break on.
+// -----------------------------------------------------------------------------
+
+task fatJar(type: Jar) {
+    group = 'application'
+    description = 'Shaded launcher+game+deps+assets jar (input for jpackage).'
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'com.cindervale.launcher.LauncherMain'
+    }
+    from sourceSets.main.output   // compiled classes + resources (assets)
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('.jar') }
+                                        .collect { zipTree(it) }
+    }
+    // JAR signatures from bundled deps would break jarsigner/jpackage.
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/versions/*/module-info.class'
+}
+
+task jpackageApp(type: Exec) {
+    group = 'application'
+    description = 'Bundle Launcher.app with a trimmed JRE via JDK jpackage.'
+    dependsOn fatJar
+
+    def dist = layout.buildDirectory.dir('dist').get().asFile
+    def input = layout.buildDirectory.dir('libs').get().asFile
+
+    doFirst {
+        // Clean prior output so jpackage doesn't refuse the destination.
+        delete fileTree(dist) {
+            include '**/Cinder Vale Launcher.app/**'
+            include 'Cinder Vale Launcher.app'
+        }
+        dist.mkdirs()
+    }
+
+    def javaHome = System.getProperty('java.home')
+    commandLine "${javaHome}/bin/jpackage",
+            '--type', 'app-image',
+            '--name', 'Cinder Vale Launcher',
+            // macOS jpackage requires the first version segment > 0.
+            '--app-version', '1.0.0',
+            '--vendor', 'Cinder Vale',
+            '--input', input.absolutePath,
+            '--main-jar', "cinder-vale-jvm-${version}-all.jar",
+            '--main-class', 'com.cindervale.launcher.LauncherMain',
+            '--dest', dist.absolutePath,
+            // Bundle the FULL JDK, not a trimmed runtime — the launcher spawns
+            // the game as a child process using $JAVA_HOME/bin/java, and
+            // jpackage's default trimmed runtime omits the java binary.
+            '--runtime-image', javaHome,
+            // Launcher is Swing/AWT — it must NOT get -XstartOnFirstThread here.
+            // The launcher itself passes that arg when it spawns the game child.
+            '--java-options', '-Xmx512m',
+            '--mac-package-name', 'CinderVale'
+}
+
+// Convenience: run the packaged .app after building it (skips gradle when used).
+task runInstalledApp(type: Exec) {
+    group = 'application'
+    description = 'Launch the packaged Cinder Vale Launcher.app'
+    dependsOn jpackageApp
+    def app = layout.buildDirectory.dir('dist/Cinder Vale Launcher.app').get().asFile
+    commandLine 'open', app.absolutePath
+}

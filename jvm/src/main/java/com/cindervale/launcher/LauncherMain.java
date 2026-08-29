@@ -34,11 +34,23 @@ public final class LauncherMain {
     static Font MONO_FONT;
 
     // Video settings, kept in memory + persisted via prefs (skipped for v1).
-    private static String[] RES_LABELS = {"720p (HD)", "1080p (Full HD)", "1440p (QHD)", "2160p (4K UHD)"};
-    private static int[][] RES_VALUES = {{1280,720}, {1920,1080}, {2560,1440}, {3840,2160}};
-    private static int resIdx = 1;
+    // "Native" auto-detects the display size — actual pixels chosen at launch time.
+    private static String[] RES_LABELS = {"Native (auto)", "720p (HD)", "1080p (Full HD)", "1440p (QHD)", "2160p (4K UHD)"};
+    private static int[][] RES_VALUES = {{-1,-1}, {1280,720}, {1920,1080}, {2560,1440}, {3840,2160}};
+    private static int resIdx = 0;   // default to native
     private static int streamingIdx = 0;  // 0 = Low (stream tiles), 1 = High (whole valley)
     private static boolean fullscreen = false;
+
+    /** Resolve the "Native (auto)" entry into the actual primary-display size. */
+    private static int[] currentResolution() {
+        int[] r = RES_VALUES[resIdx];
+        if (r[0] > 0) return r;
+        Dimension s = Toolkit.getDefaultToolkit().getScreenSize();
+        // Clamp to a sensible max so 5K displays don't demolish the GPU budget.
+        int w = Math.min((int) s.getWidth(), 2560);
+        int h = Math.min((int) s.getHeight(), 1440);
+        return new int[]{w, h};
+    }
 
     public static void main(String[] args) {
         // Force cross-platform (Metal) LAF so JButton.setBackground actually paints.
@@ -230,7 +242,12 @@ public final class LauncherMain {
     }
 
     private static JComboBox<String> resDropdown() {
-        JComboBox<String> b = new JComboBox<>(RES_LABELS);
+        // Show the detected native size next to "Native (auto)" so the user
+        // can see what will actually be launched.
+        Dimension s = Toolkit.getDefaultToolkit().getScreenSize();
+        String[] labels = RES_LABELS.clone();
+        labels[0] = String.format("Native (auto) — %d × %d", (int) s.getWidth(), (int) s.getHeight());
+        JComboBox<String> b = new JComboBox<>(labels);
         b.setSelectedIndex(resIdx);
         b.setBackground(PANEL_DIM);
         b.setForeground(TEXT);
@@ -341,7 +358,7 @@ public final class LauncherMain {
     }
 
     private static void launchGame(JFrame frame) {
-        int[] res = RES_VALUES[resIdx];
+        int[] res = currentResolution();
         List<String> cmd = new ArrayList<>();
         cmd.add(System.getProperty("java.home") + "/bin/java");
         cmd.add("-XstartOnFirstThread");
