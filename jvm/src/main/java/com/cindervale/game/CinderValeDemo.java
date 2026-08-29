@@ -8,10 +8,13 @@ import com.cindervale.engine.assets.Assets;
 import com.cindervale.engine.core.Engine;
 import com.cindervale.engine.core.Game;
 import com.cindervale.engine.scene.Scene;
+import com.cindervale.game.items.Rifle;
 import com.cindervale.game.world.Road;
 import com.cindervale.game.world.Scatter;
 import com.cindervale.game.world.Terrain;
 import com.cindervale.game.world.WorldConfig;
+import com.jme3.math.Quaternion;
+import com.jme3.scene.Node;
 
 /**
  * Cinder Vale wasteland — the first proper Fallout-shaped scene on the JVM
@@ -65,6 +68,21 @@ public final class CinderValeDemo implements Game {
                 WorldConfig.SPAWN.y);
         scene.cam.setLocation(spawn);
         scene.cam.lookAt(new Vector3f(0f, spawn.y - 0.3f, 0f), Vector3f.UNIT_Y);
+
+        // Rifle: dropped at spawn so the player literally starts *at* the gun,
+        // slightly right of the camera at hip height. Scaled up 3x so it reads
+        // clearly even when you first look down. Viewmodel-in-camera can come
+        // later; this is a solid, visible starting weapon.
+        Node rifle = Rifle.build(a);
+        rifle.setLocalScale(3.0f);
+        rifle.setLocalTranslation(spawn.x + 0.8f,
+                Terrain.groundY(spawn.x + 0.8f, spawn.z) + 0.9f,
+                spawn.z + 0.2f);
+        rifle.setLocalRotation(new Quaternion().fromAngles(
+                (float) Math.toRadians(0),
+                (float) Math.toRadians(-25),
+                (float) Math.toRadians(-8)));
+        scene.add(rifle);
     }
 
     @Override
