@@ -38,7 +38,7 @@ application {
 run {
     standardInput = System.in
     // Forward -D system properties from the Gradle CLI (for the autoshot hook).
-    ['cindervale.autoshot', 'cindervale.shotpath'].each { k ->
+    ['cindervale.autoshot', 'cindervale.shotpath', 'cindervale.autopause'].each { k ->
         if (project.hasProperty(k)) systemProperty k, project.property(k)
         if (System.getProperty(k) != null) systemProperty k, System.getProperty(k)
     }

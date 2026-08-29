@@ -73,6 +73,11 @@ public final class PauseMenu extends BaseAppState {
 
     public boolean isOpen() { return open; }
 
+    /** Programmatic toggle — used by tests + external hotkeys. */
+    public void toggle() {
+        if (open) close(); else open();
+    }
+
     private final ActionListener escListener = (name, pressed, tpf) -> {
         if (pressed && INPUT_ESC.equals(name)) {
             if (open) close(); else open();
@@ -176,11 +181,18 @@ public final class PauseMenu extends BaseAppState {
         return g;
     }
 
-    /** Cursor-drives-hover, click-fires-action. */
+    /** Cursor-drives-hover, click-fires-action.
+     *  Guards against stale-click bugs when the menu opens under a pressed
+     *  LMB (e.g. Esc during a fire): we require a release *after* the menu
+     *  opens before any press counts as a menu click. Also swallows anything
+     *  that arrives during the 200ms grace period after open. */
     private final class SimpleMouseListener implements RawInputListener {
+        private final long openedAtMs = System.currentTimeMillis();
+        private boolean lmbSeenReleased = false;
+        private int hoverIdx = -1;   // start as -1 so we don't fire on stale press with no motion
+
         @Override public void onMouseMotionEvent(MouseMotionEvent e) {
-            int H = app.getCamera().getHeight();
-            int mx = e.getX(), my = e.getY();  // JME: y from bottom
+            int mx = e.getX(), my = e.getY();
             int best = -1;
             for (int i = 0; i < items.size(); i++) {
                 var it = items.get(i);
@@ -193,12 +205,16 @@ public final class PauseMenu extends BaseAppState {
                     break;
                 }
             }
+            hoverIdx = best;
             if (best >= 0) highlight(best);
         }
         @Override public void onMouseButtonEvent(MouseButtonEvent e) {
-            if (e.isPressed() && e.getButtonIndex() == MouseInput.BUTTON_LEFT
-                    && hover >= 0 && hover < items.size()) {
-                items.get(hover).action.run();
+            if (e.getButtonIndex() != MouseInput.BUTTON_LEFT) return;
+            if (!e.isPressed()) { lmbSeenReleased = true; return; }
+            long age = System.currentTimeMillis() - openedAtMs;
+            if (age < 200 || !lmbSeenReleased) return;   // grace period + require prior release
+            if (hoverIdx >= 0 && hoverIdx < items.size()) {
+                items.get(hoverIdx).action.run();
             }
         }
         @Override public void beginInput() {} @Override public void endInput() {}

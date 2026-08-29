@@ -102,6 +102,14 @@ public final class Engine {
         }
         @Override public void simpleUpdate(float dt) {
             time.tick(dt);
+            // Test hook: -Dcindervale.autopause=3 opens the pause menu after 3s
+            // so we can reproduce Esc-crash bugs without a real keypress.
+            String ap = System.getProperty("cindervale.autopause");
+            if (ap != null && time.uptime >= Float.parseFloat(ap) && pause != null && !pause.isOpen()) {
+                System.setProperty("cindervale.autopause", "-1");
+                try { pause.toggle(); }
+                catch (Throwable t) { t.printStackTrace(System.err); throw t; }
+            }
             boolean paused = isPaused();
             if (camera != null) camera.setInputEnabled(!paused);
             if (!paused) {
