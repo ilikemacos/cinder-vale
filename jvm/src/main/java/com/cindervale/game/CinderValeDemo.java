@@ -12,6 +12,7 @@ import com.cindervale.engine.input.FpsCamera;
 import com.cindervale.game.enemies.Enemy;
 import com.cindervale.game.enemies.Spawner;
 import com.cindervale.game.items.Rifle;
+import com.cindervale.game.world.Landmarks;
 import com.cindervale.game.world.Road;
 import com.cindervale.game.world.Scatter;
 import com.cindervale.game.world.Terrain;
@@ -51,19 +52,17 @@ public final class CinderValeDemo implements Game {
                 "assets/env/cinder-vale-env-art/hdris/rural_asphalt_road_2k.hdr");
 
         scene.addDefaultLighting();
-        // FO4 golden-hour cast: warmer sun with a subtle amber tint, and a
-        // faintly amber ambient — dry, dusty, "the day after the bombs".
+        // Cinder Vale pitch: damp overcast Pacific Northwest, ~15y post-exchange.
+        // NOT the Commonwealth. Cool near-neutral sun (weak sky diffuser through
+        // cloud), cool grey-green ambient (wet moss + mineral haze), silver-grey
+        // depth fog. Kills the amber golden-hour drift the earlier grade had.
         if (scene.sun() != null) {
-            scene.sun().setColor(new ColorRGBA(1.10f, 0.96f, 0.80f, 1f));
+            scene.sun().setColor(new ColorRGBA(0.85f, 0.88f, 0.92f, 1f));
         }
         if (scene.ambient() != null) {
-            scene.ambient().setColor(new ColorRGBA(0.75f, 0.70f, 0.60f, 1f));
+            scene.ambient().setColor(new ColorRGBA(0.50f, 0.56f, 0.58f, 1f));
         }
-
-        // Distance fog — warm amber haze pulling everything toward that FO4
-        // "post-bomb morning" look. Density kept low so the terrain reads at
-        // close range; only the far mountains + horizon fade into the haze.
-        scene.enableFog(new ColorRGBA(0.82f, 0.72f, 0.55f, 1f), 0.9f, 320f);
+        scene.enableFog(new ColorRGBA(0.70f, 0.74f, 0.74f, 1f), 1.3f, 260f);
 
         // Tell the engine how to look up ground height for terrain-clamp.
         scene.groundHeight = (x, z) -> Terrain.groundY(x, z);
@@ -74,6 +73,12 @@ public final class CinderValeDemo implements Game {
 
         // Cracked-asphalt highway crossing the valley N-S through the centre.
         scene.add(Road.build(a, WorldConfig.WORLD_HALF, 7f, 3f));
+
+        // Named landmarks — a real river in the trench, the mill smokestack
+        // east of the highway, a water tower where the town will grow.
+        scene.add(Landmarks.riverWater(a));
+        scene.add(Landmarks.mill(a, scene));
+        scene.add(Landmarks.waterTower(a, scene, -14f, 8f));   // town centre
 
         // Wasteland dressing: real Poly Haven props + dead trees + mountains.
         Scatter.populate(scene, a);
