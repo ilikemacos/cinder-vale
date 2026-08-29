@@ -1,57 +1,87 @@
 # Cinder Vale
 
-An original open-world survival RPG set in a ruined Pacific Northwest mill
-valley, ~15 years after a limited nuclear exchange. Built in **Godot 4.4** and
-targeting **Apple Silicon / Metal (Forward+)**.
+An original-IP scavver RPG set in a ruined Pacific Northwest mill valley,
+~15 years after a limited nuclear exchange. Grounded, morally grey, and
+resolutely not the Commonwealth.
 
-Original IP — not affiliated with any existing franchise.
+**The game runs on jMonkeyEngine 3 / JDK 21**, rendering through Apple's
+OpenGL-on-Metal on Apple Silicon. This repo currently contains two trees:
 
-## Features so far
+- `jvm/` — **the game.** Cinder Engine skeleton on JME + Poly Haven PBR + Swing
+  launcher. This is what boots.
+- `godot-reference/` — the earlier Godot 4.4 build. Kept as the design spec
+  and asset source, not for shipping. See `godot-reference/README.md`.
 
-- **Streamed open valley** — an 800 m × 800 m region built from a pure
-  height-function, streamed in 400 m tiles. Rolling dunes, a carved river,
-  distant mountain backdrop, utility poles + wires, dead brush, wrecked cars.
-- **10 points of interest** — town, dam, quarry, mill, farm, radio tower,
-  wrecked convoy, clinic, overpass camp, river ford — each with a map marker.
-- **HearthLink map** (Tab) with discovery + fast travel.
-- **Third / first person** (V), Mixamo locomotion, WASD + sprint + crouch + jump.
-- **Gunplay** — held assault rifle, full-auto (LMB), reload (R), recoil,
-  muzzle flash, 30-round mag + reserve, ammo HUD.
-- **Enemies** — Ash Dogs raiders (melee + ranged) and procedural irradiated
-  dogs, with chase/attack AI. Player health, damage flash, death.
-- **Launcher** — front-end menu with resolution (720p–4K), memory budget,
-  render scale, renderer, and fullscreen settings.
+## Status (Aug 28, 2026)
 
-## Controls
+Honest state, per the review in [docs/REVIEW.md](docs/REVIEW.md):
 
-`WASD` move · `LMB` fire · `R` reload · `Shift` sprint · `C` crouch ·
-`Space` jump · `V` camera · `Tab` map · `Esc` free mouse
+**Working:**
+- 200×200 m rolling heightmap terrain, PBR ground, procedural scatter (~520
+  Poly Haven props), cracked-asphalt highway ribbon, distance fog.
+- Physics: gravity + capsule clamp + prop collision (no walking through cars).
+- Wrecked cars, brick ruins, rad barrels (green PointLight leak).
+- Zombie + reptile-predator enemies (procedural mesh, PBR skins, chase-and-bite AI).
+- LMB fires a raycast; enemies take damage and drop.
+- External `Cinder Vale Launcher.app` packaged with `jpackage`, bundles a full
+  JDK, spawns the game as a child process with the user's native screen resolution.
 
-## Setup
-
-Characters and animations come from [Mixamo](https://www.mixamo.com/) and are
-**not** committed (licensing + file size). To build the character scenes:
-
-1. Download the Mixamo FBX set into `assets_src/mixamo_assets/`
-   (`characters/` + `animations/` — see the in-repo `docs/`).
-2. Open the project in Godot 4.4 once to import the FBX.
-3. Run the assembly tool:
-   ```
-   /path/to/Godot --headless --path . --script res://scripts/tools/build_character.gd
-   ```
-   This bakes `assets/characters/*.tscn` with a shared animation library.
+**Missing / regressed vs the Godot build:**
+- In-world HUD (compass, VITALS pip, ammo readout, bracer HearthLink map). See
+  Task #12.
+- Named POIs (town, dam, mill, quarry, KVLE radio, ford, farm, camp, convoy,
+  clinic). Currently one un-named cell.
+- 800 m streamed world → collapsed to 200 m single mesh.
+- Mixamo character rig / third-person view.
+- Equipped rifle with mag / reserve / reload / muzzle flash.
+- Grade currently reads "Fallout 4 golden hour" — being pulled back toward
+  the actual pitch (damp overcast PNW) this pass.
 
 ## Run
 
-Open in Godot 4.4+ and press Play, or:
+Requires JDK 21+ on your `PATH`.
 
+```bash
+cd jvm
+./gradlew runLauncher            # boots the Swing launcher
+./gradlew run                    # boots straight into the game
 ```
-/path/to/Godot --path . --resolution 1280x720
+
+To build the standalone `.app` (self-contained, bundles a JRE):
+
+```bash
+cd jvm
+./gradlew jpackageApp
+xcrun codesign --force --deep --sign - "build/dist/Cinder Vale Launcher.app"
+open "build/dist/Cinder Vale Launcher.app"
 ```
 
-The game boots to the launcher; press **PLAY** to enter the world.
+## Controls
 
-## Performance
+`WASD` walk · `Shift` sprint · `Space` jump · `LMB` fire · `Esc` pause
 
-Tuned for M1 / 8 GB: one adjacent tile streamed, 2K textures, single
-directional light, procedural low-poly props. See `docs/PERFORMANCE.md`.
+## Assets
+
+Two art packs (CC0, bundled locally under `jvm/src/main/resources/assets/env/`
+but `.gitignore`d because of size — download links in the pack READMEs):
+
+- **cinder-vale-env-art** — Poly Haven HDRIs, glTF props, tileable PBR
+  textures (asphalt, brick, ground, rubble, rusted metal, concrete).
+- **cinder-vale-guns-cars-creatures** — Poly Haven + ambientCG PBR triplets
+  used as skins for the procedural gun / wrecked cars / zombie hide / predator
+  hide + keratin plates. Original silhouettes — not scanned Bethesda meshes.
+
+Fonts: Google Fonts **Oswald** (titles) and **Share Tech Mono** (terminal /
+HUD readouts). SIL Open Font License.
+
+## Docs
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — engine architecture and phase plan.
+- [docs/REVIEW.md](docs/REVIEW.md) — external review, Aug 28.
+
+## Original IP
+
+Not affiliated with any existing franchise. Vaults, Pip-Boys, Vault-Tec,
+Fallout-branded factions and creature silhouettes are deliberately not used.
+Cinder Vale is its own thing: Vale Salvage, Ash Dogs, Red Cordon, Radio
+Tower KVLE, and the exciter-coil-in-the-mill-turbine spine.

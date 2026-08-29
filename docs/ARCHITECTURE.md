@@ -7,6 +7,14 @@ already running on disk. **Read §0 first — it changes several downstream choi
 
 ---
 
+## 0.5. Resolved (Aug 28)
+
+**Engine decision (§2) is closed: jMonkeyEngine 3 on JDK 21.** The `jvm/`
+tree is the game. The from-scratch "Cinder Engine on raw GL 4.1" is not going
+to happen — writing a renderer, scene graph, animation, physics and asset
+pipeline by hand is a months-long detour when JME already ships all of it and
+runs on the M1. The rest of this doc treats §2 as informational history.
+
 ## 0. What this refinement changes (read first)
 
 1. **macOS is OpenGL 4.1 max, not 4.6.** Confirmed by our Phase-0 run:

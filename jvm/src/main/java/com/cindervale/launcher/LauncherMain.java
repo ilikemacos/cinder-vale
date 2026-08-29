@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Cinder Vale launcher — Lunar-Client-style front end: hero image, left nav,
+ * Cinder Vale launcher — terminal-styled front end: hero image, left nav,
  * news/dispatches panel, video settings, PLAY button that spawns the game as a
  * separate JVM process. Pure Swing (bundled with JDK), zero extra deps.
  *
@@ -38,7 +38,6 @@ public final class LauncherMain {
     private static String[] RES_LABELS = {"Native (auto)", "720p (HD)", "1080p (Full HD)", "1440p (QHD)", "2160p (4K UHD)"};
     private static int[][] RES_VALUES = {{-1,-1}, {1280,720}, {1920,1080}, {2560,1440}, {3840,2160}};
     private static int resIdx = 0;   // default to native
-    private static int streamingIdx = 0;  // 0 = Low (stream tiles), 1 = High (whole valley)
     private static boolean fullscreen = false;
 
     /** Resolve the "Native (auto)" entry into the actual primary-display size. */
@@ -59,17 +58,23 @@ public final class LauncherMain {
         try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
         catch (Exception ignored) {}
 
-        // Prefer the game's bundled fonts (Oswald + Share Tech Mono); fall back to system.
-        try {
-            File oswald = new File("../godot-reference/assets/ui/fonts/Oswald.ttf");
-            if (oswald.exists()) TITLE_FONT = Font.createFont(Font.TRUETYPE_FONT, oswald).deriveFont(Font.PLAIN, 48f);
-            File mono = new File("../godot-reference/assets/ui/fonts/ShareTechMono.ttf");
-            if (mono.exists()) MONO_FONT = Font.createFont(Font.TRUETYPE_FONT, mono).deriveFont(Font.PLAIN, 14f);
-        } catch (Exception ignored) {}
-        if (TITLE_FONT == null) TITLE_FONT = new Font("Helvetica Neue", Font.BOLD, 44);
-        if (MONO_FONT == null) MONO_FONT = new Font("Menlo", Font.PLAIN, 13);
+        // Fonts load from the classpath so they work identically in dev, in a
+        // shaded jar, and inside the jpackage'd .app. Earlier code read from
+        // "../godot-reference/..." which broke the moment cwd changed.
+        TITLE_FONT = loadTtf("/assets/ui/fonts/Oswald.ttf", 48f, "Helvetica Neue", Font.BOLD, 44);
+        MONO_FONT  = loadTtf("/assets/ui/fonts/ShareTechMono.ttf", 14f, "Menlo", Font.PLAIN, 13);
 
         SwingUtilities.invokeLater(LauncherMain::showLauncher);
+    }
+
+    private static Font loadTtf(String classpath, float size,
+                                 String fallbackFamily, int fallbackStyle, int fallbackSize) {
+        try (var in = LauncherMain.class.getResourceAsStream(classpath)) {
+            if (in != null) {
+                return Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(Font.PLAIN, size);
+            }
+        } catch (Exception ignored) {}
+        return new Font(fallbackFamily, fallbackStyle, fallbackSize);
     }
 
     private static void showLauncher() {
@@ -216,8 +221,9 @@ public final class LauncherMain {
         c.gridy++;
 
         addSettingRow(p, c, "Resolution", resDropdown());
-        addSettingRow(p, c, "World streaming", streamingDropdown());
         addSettingRow(p, c, "Fullscreen", fullscreenToggle());
+        // World-streaming toggle removed — the current mesh is not streamed.
+        // Add it back when tiled streaming actually lands.
 
         c.gridy++;
         JLabel note = new JLabel("Tuned for Apple M1 / 8 GB. Lower resolution if fps dips below 30.");
@@ -253,16 +259,6 @@ public final class LauncherMain {
         b.setForeground(TEXT);
         b.setFont(MONO_FONT);
         b.addActionListener(e -> resIdx = b.getSelectedIndex());
-        return b;
-    }
-
-    private static JComboBox<String> streamingDropdown() {
-        JComboBox<String> b = new JComboBox<>(new String[]{"Low  (stream tiles)", "High (whole valley)"});
-        b.setSelectedIndex(streamingIdx);
-        b.setBackground(PANEL_DIM);
-        b.setForeground(TEXT);
-        b.setFont(MONO_FONT);
-        b.addActionListener(e -> streamingIdx = b.getSelectedIndex());
         return b;
     }
 
@@ -366,7 +362,7 @@ public final class LauncherMain {
         cmd.add("-Dcindervale.width=" + res[0]);
         cmd.add("-Dcindervale.height=" + res[1]);
         cmd.add("-Dcindervale.fullscreen=" + fullscreen);
-        cmd.add("-Dcindervale.streaming=" + (streamingIdx == 1 ? "high" : "low"));
+        // (streaming toggle intentionally omitted — nothing streamed to gate)
         cmd.add("-cp");
         cmd.add(System.getProperty("java.class.path"));
         cmd.add("com.cindervale.Main");

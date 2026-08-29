@@ -1,19 +1,20 @@
-# Godot
-.godot/
-export/
+# Editor / OS noise
 *.tmp
 .DS_Store
 
-# Raw Mixamo source assets — large (>100MB) and not for redistribution.
-# Drop your own Mixamo download here and run scripts/tools/build_character.gd.
-assets_src/
+# Godot (reference tree) — engine cache, exports, source assets
+godot-reference/.godot/
+godot-reference/export/
+godot-reference/build/
+# Raw Mixamo FBX pack — >100 MB, not for redistribution. Drop your own into
+# godot-reference/assets_src/ and run scripts/tools/build_character.gd once.
+godot-reference/assets_src/
 
-# Exported binaries (.app/.dmg) — too large for git, build locally.
-build/
-
-# JVM game — Poly Haven env art pack (CC0, but big). Bundle it in-place instead.
+# JVM game — CC0 art packs (Poly Haven, ambientCG). Big; bundle locally.
+# Downloads and unpack instructions in the pack READMEs.
 jvm/src/main/resources/assets/env/
-# Gradle build outputs
+
+# JVM build outputs
 jvm/.gradle/
 jvm/build/
 jvm/gradle/
